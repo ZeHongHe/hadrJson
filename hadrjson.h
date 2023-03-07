@@ -19,10 +19,10 @@ typedef __json_value json_value_t;
 struct __json_value {
     union {
         double n;
-        struct { char* s; size_t len; } string;
-        struct { json_value_t* v; size_t size; } array;
-        struct { json_member_t* m; size_t size; } object;
-    } value;
+        struct { char* s; size_t len; } s;
+        struct { json_value_t* v; size_t size; } a;
+        struct { json_member_t* m; size_t size; } o;
+    } u;
     JSON_TYPE type;
 };
 
