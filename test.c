@@ -19,6 +19,7 @@ static int test_pass = 0;
     } while(0)
 
 #define EXPECT_EQ_INT(expect, actual) EXPECT_EQ_BASE((expect == actual), expect, actual, "%d")
+#define EXPECT_EQ_DOUBLE(expect, actual) EXPECT_EQ_BASE((expect == actual), expect, actual, "%.17g")
 #define EXPECT_EQ_STRING(expect, actual, length) \
     EXPECT_EQ_BASE(sizeof(expect) - 1 == (length) && !memcmp(expect, actual, length), expect, actual, "%s")
 
@@ -54,6 +55,49 @@ static void test_parse_string() {
     TEST_STRING("\" \\ / \b \f \n \r \t", "\"\\\" \\\\ \\/ \\b \\f \\n \\r \\t\"");
 }
 
+#define TEST_NUMBER(expect, json)\
+    do {\
+        json_value_t v;\
+        json_init(&v);\
+        EXPECT_EQ_INT(JSON_PARSE_OK, json_parse(&v, json));\
+        EXPECT_EQ_INT(JSON_NUMBER, json_type(&v));\
+        EXPECT_EQ_DOUBLE(expect, json_get_number(&v));\
+    } while(0)
+
+static void test_parse_number() {
+#if 0
+    TEST_NUMBER(0.0, "0");
+    TEST_NUMBER(0.0, "-0");
+    TEST_NUMBER(0.0, "-0.0");
+    TEST_NUMBER(1.0, "1");
+    TEST_NUMBER(-1.0, "-1");
+    TEST_NUMBER(1.5, "1.5");
+    TEST_NUMBER(-1.5, "-1.5");
+    TEST_NUMBER(3.1416, "3.1416");
+    TEST_NUMBER(1E10, "1E10");
+    TEST_NUMBER(1e10, "1e10");
+    TEST_NUMBER(1E+10, "1E+10");
+    TEST_NUMBER(1E-10, "1E-10");
+    TEST_NUMBER(-1E10, "-1E10");
+    TEST_NUMBER(-1e10, "-1e10");
+    TEST_NUMBER(-1E+10, "-1E+10");
+    TEST_NUMBER(-1E-10, "-1E-10");
+    TEST_NUMBER(1.234E+10, "1.234E+10");
+    TEST_NUMBER(1.234E-10, "1.234E-10");
+    TEST_NUMBER(0.0, "1e-10000"); /* must underflow */
+
+    TEST_NUMBER(1.0000000000000002, "1.0000000000000002");  /* the smallest number > 1 */
+    TEST_NUMBER( 4.9406564584124654e-324, "4.9406564584124654e-324"); /* minimum denormal */
+    TEST_NUMBER(-4.9406564584124654e-324, "-4.9406564584124654e-324");
+    TEST_NUMBER( 2.2250738585072009e-308, "2.2250738585072009e-308");  /* Max subnormal double */
+    TEST_NUMBER(-2.2250738585072009e-308, "-2.2250738585072009e-308");
+    TEST_NUMBER( 2.2250738585072014e-308, "2.2250738585072014e-308");  /* Min normal positive double */
+    TEST_NUMBER(-2.2250738585072014e-308, "-2.2250738585072014e-308");
+    TEST_NUMBER( 1.7976931348623157e+308, "1.7976931348623157e+308");  /* Max double */
+    TEST_NUMBER(-1.7976931348623157e+308, "-1.7976931348623157e+308");
+#endif
+}
+
 #define TEST_ERROR(error, json)\
     do {\
         json_value_t v;\
@@ -74,10 +118,26 @@ static void test_parse_invalid_value() {
     TEST_ERROR(JSON_PARSE_INVALID_VALUE, "nul");
     TEST_ERROR(JSON_PARSE_INVALID_VALUE, "tru");
     TEST_ERROR(JSON_PARSE_INVALID_VALUE, "fals");
+
+#if 0
+    TEST_ERROR(JSON_PARSE_INVALID_VALUE, "+0");
+    TEST_ERROR(JSON_PARSE_INVALID_VALUE, "+1");
+    TEST_ERROR(JSON_PARSE_INVALID_VALUE, ".123"); /* at least one digit before '.' */
+    TEST_ERROR(JSON_PARSE_INVALID_VALUE, "1.");   /* at least one digit after '.' */
+    TEST_ERROR(JSON_PARSE_INVALID_VALUE, "INF");
+    TEST_ERROR(JSON_PARSE_INVALID_VALUE, "inf");
+    TEST_ERROR(JSON_PARSE_INVALID_VALUE, "NAN");
+    TEST_ERROR(JSON_PARSE_INVALID_VALUE, "nan");
+#endif
 }
 
 static void test_parse_root_not_singular() {
     TEST_ERROR(JSON_PARSE_ROOT_NOT_SINGULAR, "null n");
+#if 0
+    TEST_ERROR(JSON_PARSE_ROOT_NOT_SINGULAR, "0123"); /* after zero should be '.' or nothing */
+    TEST_ERROR(JSON_PARSE_ROOT_NOT_SINGULAR, "0x0");
+    TEST_ERROR(JSON_PARSE_ROOT_NOT_SINGULAR, "0x123");
+#endif
 }
 
 static void test_parse_missing_quotation_mark() {
@@ -97,8 +157,18 @@ static void test_parse_invalid_string_char() {
     TEST_ERROR(JSON_PARSE_INVALID_STRING_CHAR, "\"\x1F\"");
 }
 
+static void test_parse_number_too_big() {
+#if 0
+    TEST_ERROR(JSON_PARSE_NUMBER_TOO_BIG, "1e309");
+    TEST_ERROR(JSON_PARSE_NUMBER_TOO_BIG, "-1e309");
+#endif
+}
+
 void test_parse() {
     test_parse_literal();
+#if 0
+    test_parse_number();
+#endif
     test_parse_string();
     test_parse_expect_value();
     test_parse_invalid_value();
@@ -106,6 +176,9 @@ void test_parse() {
     test_parse_missing_quotation_mark();
     test_parse_invalid_string_escape();
     test_parse_invalid_string_char();
+#if 0
+    test_parse_number_too_big();
+#endif
 }
 
 int main() {

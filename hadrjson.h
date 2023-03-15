@@ -20,7 +20,8 @@ enum {
     JSON_PARSE_ROOT_NOT_SINGULAR,
     JSON_PARSE_MISS_QUOTATION_MARK,
     JSON_PARSE_INVALID_STRING_ESCAPE,
-    JSON_PARSE_INVALID_STRING_CHAR
+    JSON_PARSE_INVALID_STRING_CHAR,
+    JSON_PARSE_NUMBER_TOO_BIG
 };
 
 typedef struct json_member_t json_member_t;
@@ -48,6 +49,7 @@ void json_free(json_value_t* v);
 #define json_init(v) do { (v)->type = JSON_NULL; } while(0)
 char* json_get_string(json_value_t* v);
 size_t json_get_string_length(json_value_t* v);
+double json_get_number(json_value_t* v);
 JSON_TYPE json_type(json_value_t* v);
 
 #endif

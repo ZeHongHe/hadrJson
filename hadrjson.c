@@ -144,6 +144,11 @@ size_t json_get_string_length(json_value_t* v) {
     return v->u.s.len;
 }
 
+double json_get_number(json_value_t* v) {
+    assert(v != NULL && v->type == JSON_NUMBER);
+    return v->u.n;
+}
+
 JSON_TYPE json_type(json_value_t* v) {
     assert(v != NULL);
     return v->type;
