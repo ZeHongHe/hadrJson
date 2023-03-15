@@ -13,6 +13,16 @@ typedef enum {
     JSON_OBJECT
 } JSON_TYPE;
 
+enum {
+    JSON_PARSE_OK = 0,
+    JSON_PARSE_EXPECT_VALUE,
+    JSON_PARSE_INVALID_VALUE,
+    JSON_PARSE_ROOT_NOT_SINGULAR,
+    JSON_PARSE_MISS_QUOTATION_MARK,
+    JSON_PARSE_INVALID_STRING_ESCAPE,
+    JSON_PARSE_INVALID_STRING_CHAR
+};
+
 typedef struct json_member_t json_member_t;
 typedef struct json_value_t json_value_t;
 
@@ -32,9 +42,10 @@ struct json_member_t {
     json_value_t* v;
 };
 
-json_value_t* json_parse(const char* s);
-void json_destory(json_value_t* v);
+int json_parse(json_value_t* v, const char* str);
+void json_free(json_value_t* v);
 
+#define json_init(v) do { (v)->type = JSON_NULL; } while(0)
 char* json_get_string(json_value_t* v);
 size_t json_get_string_length(json_value_t* v);
 JSON_TYPE json_type(json_value_t* v);
