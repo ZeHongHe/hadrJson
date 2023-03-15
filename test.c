@@ -65,7 +65,6 @@ static void test_parse_string() {
     } while(0)
 
 static void test_parse_number() {
-#if 0
     TEST_NUMBER(0.0, "0");
     TEST_NUMBER(0.0, "-0");
     TEST_NUMBER(0.0, "-0.0");
@@ -95,7 +94,6 @@ static void test_parse_number() {
     TEST_NUMBER(-2.2250738585072014e-308, "-2.2250738585072014e-308");
     TEST_NUMBER( 1.7976931348623157e+308, "1.7976931348623157e+308");  /* Max double */
     TEST_NUMBER(-1.7976931348623157e+308, "-1.7976931348623157e+308");
-#endif
 }
 
 #define TEST_ERROR(error, json)\
@@ -119,7 +117,6 @@ static void test_parse_invalid_value() {
     TEST_ERROR(JSON_PARSE_INVALID_VALUE, "tru");
     TEST_ERROR(JSON_PARSE_INVALID_VALUE, "fals");
 
-#if 0
     TEST_ERROR(JSON_PARSE_INVALID_VALUE, "+0");
     TEST_ERROR(JSON_PARSE_INVALID_VALUE, "+1");
     TEST_ERROR(JSON_PARSE_INVALID_VALUE, ".123"); /* at least one digit before '.' */
@@ -128,16 +125,14 @@ static void test_parse_invalid_value() {
     TEST_ERROR(JSON_PARSE_INVALID_VALUE, "inf");
     TEST_ERROR(JSON_PARSE_INVALID_VALUE, "NAN");
     TEST_ERROR(JSON_PARSE_INVALID_VALUE, "nan");
-#endif
 }
 
 static void test_parse_root_not_singular() {
     TEST_ERROR(JSON_PARSE_ROOT_NOT_SINGULAR, "null n");
-#if 0
+
     TEST_ERROR(JSON_PARSE_ROOT_NOT_SINGULAR, "0123"); /* after zero should be '.' or nothing */
     TEST_ERROR(JSON_PARSE_ROOT_NOT_SINGULAR, "0x0");
     TEST_ERROR(JSON_PARSE_ROOT_NOT_SINGULAR, "0x123");
-#endif
 }
 
 static void test_parse_missing_quotation_mark() {
@@ -158,17 +153,13 @@ static void test_parse_invalid_string_char() {
 }
 
 static void test_parse_number_too_big() {
-#if 0
     TEST_ERROR(JSON_PARSE_NUMBER_TOO_BIG, "1e309");
     TEST_ERROR(JSON_PARSE_NUMBER_TOO_BIG, "-1e309");
-#endif
 }
 
 void test_parse() {
     test_parse_literal();
-#if 0
     test_parse_number();
-#endif
     test_parse_string();
     test_parse_expect_value();
     test_parse_invalid_value();
@@ -176,9 +167,7 @@ void test_parse() {
     test_parse_missing_quotation_mark();
     test_parse_invalid_string_escape();
     test_parse_invalid_string_char();
-#if 0
     test_parse_number_too_big();
-#endif
 }
 
 int main() {

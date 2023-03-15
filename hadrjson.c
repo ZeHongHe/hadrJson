@@ -1,9 +1,14 @@
 #include <stdlib.h>
+#include <math.h>
+#include <errno.h>
 #include <stddef.h>
 #include <string.h>
 #include <assert.h>
 #include <stdbool.h>
 #include "hadrjson.h"
+
+#define ISDIGIT(ch) ((ch) >= '0' && (ch) <= '9')
+#define ISDIGIT1TO9(ch) ((ch) >= '1' && (ch) <= '9')
 
 static bool is_whitespace(char c) {
     return (c == ' ' || c == '\t' || c == '\n' || c == '\r');
@@ -100,14 +105,42 @@ static int __json_parse_string(const char* str, const char** end, json_value_t* 
     return ret;
 }
 
+static int __json_parse_number(const char* str, const char** end, json_value_t* v) {
+    const char* p = str;
+    if (*p == '-')
+        p++;
+    if (*p == '0') {
+        if (ISDIGIT(p[1]) || p[1] == 'x' || p[1] == 'X') return JSON_PARSE_ROOT_NOT_SINGULAR;
+        p++;
+    } else if (ISDIGIT1TO9(*p)) {
+        for (p++; ISDIGIT(*p); p++);
+    } else
+        return JSON_PARSE_INVALID_VALUE;
+    if (*p == '.') {
+        if (!ISDIGIT(*++p)) return JSON_PARSE_INVALID_VALUE;
+        for (p++; ISDIGIT(*p); p++);
+    }
+    if (*p == 'e' || *p == 'E') {
+        p++;
+        if (*p == '+' || *p == '-') p++;
+        for (; ISDIGIT(*p); p++);
+    }
+    errno = 0;
+    v->u.n = strtod(str, (char**)end);
+    if (errno == ERANGE && (v->u.n == HUGE_VAL || v->u.n == -HUGE_VAL))
+        return JSON_PARSE_NUMBER_TOO_BIG;
+    v->type = JSON_NUMBER;
+    return JSON_PARSE_OK;
+}
+
 static int __json_parse_value(const char* str, const char** end, json_value_t* v) {
     switch (*str) {
         case 'n':  return __json_parse_literal(str, end, "null", JSON_NULL, v);
         case 't':  return __json_parse_literal(str, end, "true", JSON_TRUE, v);
         case 'f':  return __json_parse_literal(str, end, "false", JSON_FALSE, v);
         case '"':  return __json_parse_string(str, end, v);
+        default:   return __json_parse_number(str, end, v);
         case '\0': return JSON_PARSE_EXPECT_VALUE;
-        default:   return JSON_PARSE_INVALID_VALUE;
     }
 }
 
