@@ -110,14 +110,17 @@ static int __json_parse_number(const char* str, const char** end, json_value_t* 
     if (*p == '-')
         p++;
     if (*p == '0') {
-        if (ISDIGIT(p[1]) || p[1] == 'x' || p[1] == 'X') return JSON_PARSE_ROOT_NOT_SINGULAR;
+        if (ISDIGIT(p[1]) || p[1] == 'x' || p[1] == 'X')
+            return JSON_PARSE_ROOT_NOT_SINGULAR;
         p++;
     } else if (ISDIGIT1TO9(*p)) {
         for (p++; ISDIGIT(*p); p++);
-    } else
+    } else {
         return JSON_PARSE_INVALID_VALUE;
+    }
     if (*p == '.') {
-        if (!ISDIGIT(*++p)) return JSON_PARSE_INVALID_VALUE;
+        if (!ISDIGIT(*++p))
+            return JSON_PARSE_INVALID_VALUE;
         for (p++; ISDIGIT(*p); p++);
     }
     if (*p == 'e' || *p == 'E') {
