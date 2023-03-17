@@ -34,8 +34,8 @@ struct json_value_t {
     union {
         double n;
         struct { char* s; size_t len; } s;
-        struct { json_value_t* e; size_t size; } a;
-        struct { json_member_t* m; size_t size; } o;
+        struct { json_value_t*  e; size_t size, capacity; } a;
+        struct { json_member_t* m; size_t size, capacity; } o;
     } u;
     JSON_TYPE type;
 };

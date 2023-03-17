@@ -3,7 +3,7 @@ CFLAGS = -ansi -pedantic -Wall
 ifeq ($(DEBUG), yes)
 	CFLAGS += -O0 -g
 else
-	CFLAGS += -O2
+	CFLAGS += -O0 -g
 endif
 
 CC = gcc

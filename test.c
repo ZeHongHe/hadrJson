@@ -137,7 +137,7 @@ static void test_parse_array() {
         EXPECT_EQ_INT(JSON_ARRAY, json_type(e));
         EXPECT_EQ_SIZE_T(i, json_get_array_size(e));
         for (j = 0; j < i; j++) {
-            json_value_t* e2 = json_get_array_element(e, i);
+            json_value_t* e2 = json_get_array_element(e, j);
             EXPECT_EQ_INT(JSON_NUMBER, json_type(e2));
             EXPECT_EQ_DOUBLE((double)j, json_get_number(e2));
         }
@@ -175,7 +175,7 @@ static void test_parse_invalid_value() {
     TEST_ERROR(JSON_PARSE_INVALID_VALUE, "NAN");
     TEST_ERROR(JSON_PARSE_INVALID_VALUE, "nan");
 
-#if 0
+#if 1
     TEST_ERROR(JSON_PARSE_INVALID_VALUE, "[1,]");
     TEST_ERROR(JSON_PARSE_INVALID_VALUE, "[\"a\", nul]");
 #endif
@@ -235,21 +235,17 @@ static void test_parse_invalid_unicode_surrogate() {
 }
 
 static void test_parse_miss_comma_or_square_bracket() {
-#if 0
-    TEST_ERROR(JSON_PARSE_MISS_COMMA_OR_SQUARE_BRACKET, "[");
-    TEST_ERROR(JSON_PARSE_MISS_COMMA_OR_SQUARE_BRACKET, "[[]");
+    TEST_ERROR(JSON_PARSE_MISS_COMMA_OR_SQUARE_BRACKET, "[1");
     TEST_ERROR(JSON_PARSE_MISS_COMMA_OR_SQUARE_BRACKET, "[1 2]");
+    TEST_ERROR(JSON_PARSE_MISS_COMMA_OR_SQUARE_BRACKET, "[[]");
     TEST_ERROR(JSON_PARSE_MISS_COMMA_OR_SQUARE_BRACKET, "[\"Hello\"");
-#endif
 }
 
 void test_parse() {
     test_parse_literal();
     test_parse_number();
     test_parse_string();
-#if 0
     test_parse_array();
-#endif
     test_parse_expect_value();
     test_parse_invalid_value();
     test_parse_number_too_big();
@@ -259,9 +255,7 @@ void test_parse() {
     test_parse_invalid_string_char();
     test_parse_invalid_unicode_hex();
     test_parse_invalid_unicode_surrogate();
-#if 0
     test_parse_miss_comma_or_square_bracket();
-#endif
 }
 
 int main() {
