@@ -1,7 +1,7 @@
-CFLAGS = -g -ansi -pedantic -Wall
+CFLAGS = -ansi -pedantic -Wall
 
 ifeq ($(DEBUG), yes)
-	CFLAGS += -O0
+	CFLAGS += -O0 -g
 else
 	CFLAGS += -O2
 endif

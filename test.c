@@ -23,6 +23,9 @@ static int test_pass = 0;
 #define EXPECT_EQ_STRING(expect, actual, length) \
         EXPECT_EQ_BASE(sizeof(expect) - 1 == (length) && !memcmp(expect, actual, length), expect, actual, "%s");
 
+#define EXPECT_EQ_SIZE_T(expect, actual) \
+        EXPECT_EQ_BASE(((int)expect == (int)actual), (int)expect, (int)actual, "%d");
+
 #define TEST_LITERAL(expect, json)\
     do {\
         json_value_t v;\
@@ -49,12 +52,10 @@ static void test_parse_literal() {
     } while(0)
 
 static void test_parse_string() {
-#if 1
     TEST_STRING("", "\"\"");
     TEST_STRING("Hello", "\"Hello\"");
     TEST_STRING("Hello\nWorld", "\"Hello\\nWorld\"");
     TEST_STRING("\" \\ / \b \f \n \r \t", "\"\\\" \\\\ \\/ \\b \\f \\n \\r \\t\"");
-#endif
     TEST_STRING("Hello\0World", "\"Hello\\u0000World\"");
     TEST_STRING("\x24", "\"\\u0024\"");         /* Dollar sign U+0024 */
     TEST_STRING("\xC2\xA2", "\"\\u00A2\"");     /* Cents sign U+00A2 */
@@ -104,6 +105,46 @@ static void test_parse_number() {
     TEST_NUMBER(-1.7976931348623157e+308, "-1.7976931348623157e+308");
 }
 
+static void test_parse_array() {
+    size_t i, j;
+    json_value_t v;
+
+    json_init(&v);
+    EXPECT_EQ_INT(JSON_PARSE_OK, json_parse(&v, "[]"));
+    EXPECT_EQ_SIZE_T(0, json_get_array_size(&v));
+    EXPECT_EQ_INT(JSON_ARRAY, json_type(&v));
+    json_free(&v);
+
+    json_init(&v);
+    EXPECT_EQ_INT(JSON_PARSE_OK, json_parse(&v, "[ null , false , true , 123 , \"abc\" ]"));
+    EXPECT_EQ_INT(JSON_ARRAY, json_type(&v));
+    EXPECT_EQ_SIZE_T(5, json_get_array_size(&v));
+    EXPECT_EQ_INT(JSON_NULL, json_type(json_get_array_element(&v, 0)));
+    EXPECT_EQ_INT(JSON_FALSE, json_type(json_get_array_element(&v, 1)));
+    EXPECT_EQ_INT(JSON_TRUE, json_type(json_get_array_element(&v, 2)));
+    EXPECT_EQ_INT(JSON_NUMBER, json_type(json_get_array_element(&v, 3)));
+    EXPECT_EQ_INT(JSON_STRING, json_type(json_get_array_element(&v, 4)));
+    EXPECT_EQ_DOUBLE(123.0, json_get_number(json_get_array_element(&v, 3)));
+    EXPECT_EQ_STRING("abc", json_get_string(json_get_array_element(&v, 4)), json_get_string_length(json_get_array_element(&v, 4)));
+    json_free(&v);
+
+    json_init(&v);
+    EXPECT_EQ_INT(JSON_PARSE_OK, json_parse(&v, "[ [ ] , [ 0 ] , [ 0 , 1 ] , [ 0 , 1 , 2 ] ]"));
+    EXPECT_EQ_INT(JSON_ARRAY, json_type(&v));
+    EXPECT_EQ_SIZE_T(4, json_get_array_size(&v));
+    for (i = 0; i < 4; i++) {
+        json_value_t* e = json_get_array_element(&v, i);
+        EXPECT_EQ_INT(JSON_ARRAY, json_type(e));
+        EXPECT_EQ_SIZE_T(i, json_get_array_size(e));
+        for (j = 0; j < i; j++) {
+            json_value_t* e2 = json_get_array_element(e, i);
+            EXPECT_EQ_INT(JSON_NUMBER, json_type(e2));
+            EXPECT_EQ_DOUBLE((double)j, json_get_number(e2));
+        }
+    }
+    json_free(&v);
+}
+
 #define TEST_ERROR(error, json)\
     do {\
         json_value_t v;\
@@ -133,6 +174,11 @@ static void test_parse_invalid_value() {
     TEST_ERROR(JSON_PARSE_INVALID_VALUE, "inf");
     TEST_ERROR(JSON_PARSE_INVALID_VALUE, "NAN");
     TEST_ERROR(JSON_PARSE_INVALID_VALUE, "nan");
+
+#if 0
+    TEST_ERROR(JSON_PARSE_INVALID_VALUE, "[1,]");
+    TEST_ERROR(JSON_PARSE_INVALID_VALUE, "[\"a\", nul]");
+#endif
 }
 
 static void test_parse_root_not_singular() {
@@ -188,12 +234,22 @@ static void test_parse_invalid_unicode_surrogate() {
     TEST_ERROR(JSON_PARSE_INVALID_UNICODE_SURROGATE, "\"\\uD800\\uE000\"");
 }
 
+static void test_parse_miss_comma_or_square_bracket() {
+#if 0
+    TEST_ERROR(JSON_PARSE_MISS_COMMA_OR_SQUARE_BRACKET, "[");
+    TEST_ERROR(JSON_PARSE_MISS_COMMA_OR_SQUARE_BRACKET, "[[]");
+    TEST_ERROR(JSON_PARSE_MISS_COMMA_OR_SQUARE_BRACKET, "[1 2]");
+    TEST_ERROR(JSON_PARSE_MISS_COMMA_OR_SQUARE_BRACKET, "[\"Hello\"");
+#endif
+}
+
 void test_parse() {
-#if 1
     test_parse_literal();
     test_parse_number();
-#endif
     test_parse_string();
+#if 0
+    test_parse_array();
+#endif
     test_parse_expect_value();
     test_parse_invalid_value();
     test_parse_number_too_big();
@@ -201,9 +257,10 @@ void test_parse() {
     test_parse_missing_quotation_mark();
     test_parse_invalid_string_escape();
     test_parse_invalid_string_char();
-#if 1
     test_parse_invalid_unicode_hex();
     test_parse_invalid_unicode_surrogate();
+#if 0
+    test_parse_miss_comma_or_square_bracket();
 #endif
 }
 

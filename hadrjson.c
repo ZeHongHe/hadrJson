@@ -250,21 +250,32 @@ void json_free(json_value_t* v) {
     v->type = JSON_NULL;
 }
 
-char* json_get_string(json_value_t* v) {
+JSON_TYPE json_type(json_value_t* v) {
+    assert(v != NULL);
+    return v->type;
+}
+
+char* json_get_string(const json_value_t* v) {
     assert(v != NULL && v->type == JSON_STRING);
     return v->u.s.s;
 }
-size_t json_get_string_length(json_value_t* v) {
+size_t json_get_string_length(const json_value_t* v) {
     assert(v != NULL && v->type == JSON_STRING);
     return v->u.s.len;
 }
 
-double json_get_number(json_value_t* v) {
+double json_get_number(const json_value_t* v) {
     assert(v != NULL && v->type == JSON_NUMBER);
     return v->u.n;
 }
 
-JSON_TYPE json_type(json_value_t* v) {
-    assert(v != NULL);
-    return v->type;
+size_t json_get_array_size(const json_value_t* v) {
+    assert(v != NULL && v->type == JSON_ARRAY);
+    return v->u.a.size;
+}
+
+json_value_t* json_get_array_element(const json_value_t* v, size_t index) {
+    assert(v != NULL && v->type == JSON_ARRAY);
+    assert(index < v->u.a.size);
+    return &v->u.a.e[index];
 }

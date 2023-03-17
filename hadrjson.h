@@ -23,7 +23,8 @@ enum {
     JSON_PARSE_INVALID_STRING_ESCAPE,
     JSON_PARSE_INVALID_STRING_CHAR,
     JSON_PARSE_INVALID_UNICODE_HEX,
-    JSON_PARSE_INVALID_UNICODE_SURROGATE
+    JSON_PARSE_INVALID_UNICODE_SURROGATE,
+    JSON_PARSE_MISS_COMMA_OR_SQUARE_BRACKET
 };
 
 typedef struct json_member_t json_member_t;
@@ -33,7 +34,7 @@ struct json_value_t {
     union {
         double n;
         struct { char* s; size_t len; } s;
-        struct { json_value_t* v; size_t size; } a;
+        struct { json_value_t* e; size_t size; } a;
         struct { json_member_t* m; size_t size; } o;
     } u;
     JSON_TYPE type;
@@ -49,9 +50,13 @@ struct json_member_t {
 int json_parse(json_value_t* v, const char* str);
 void json_free(json_value_t* v);
 
-char* json_get_string(json_value_t* v);
-size_t json_get_string_length(json_value_t* v);
-double json_get_number(json_value_t* v);
 JSON_TYPE json_type(json_value_t* v);
 
+double json_get_number(const json_value_t* v);
+
+char* json_get_string(const json_value_t* v);
+size_t json_get_string_length(const json_value_t* v);
+
+size_t json_get_array_size(const json_value_t* v);
+json_value_t* json_get_array_element(const json_value_t* v, size_t index);
 #endif
