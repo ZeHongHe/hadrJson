@@ -45,10 +45,10 @@ struct json_member_t {
     json_value_t* v;
 };
 
+#define json_init(v) do { (v)->type = JSON_NULL; } while(0)
 int json_parse(json_value_t* v, const char* str);
 void json_free(json_value_t* v);
 
-#define json_init(v) do { (v)->type = JSON_NULL; } while(0)
 char* json_get_string(json_value_t* v);
 size_t json_get_string_length(json_value_t* v);
 double json_get_number(json_value_t* v);

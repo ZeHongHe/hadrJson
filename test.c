@@ -13,7 +13,7 @@ static int test_pass = 0;
         if (equality)\
             test_pass++;\
         else {\
-            fprintf(stderr, "%s:%d: expect: " format " actual: " format "\n", __FILE__, __LINE__, expect, actual);\
+            fprintf(stderr, "%s:%d: expect: " format ", actual: " format ".\n", __FILE__, __LINE__, expect, actual);\
             main_ret = 1;\
         }\
     } while(0)
@@ -21,7 +21,7 @@ static int test_pass = 0;
 #define EXPECT_EQ_INT(expect, actual) EXPECT_EQ_BASE((expect == actual), expect, actual, "%d")
 #define EXPECT_EQ_DOUBLE(expect, actual) EXPECT_EQ_BASE((expect == actual), expect, actual, "%.17g")
 #define EXPECT_EQ_STRING(expect, actual, length) \
-    EXPECT_EQ_BASE(sizeof(expect) - 1 == (length) && !memcmp(expect, actual, length), expect, actual, "%s")
+        EXPECT_EQ_BASE(sizeof(expect) - 1 == (length) && !memcmp(expect, actual, length), expect, actual, "%s");
 
 #define TEST_LITERAL(expect, json)\
     do {\
@@ -49,18 +49,18 @@ static void test_parse_literal() {
     } while(0)
 
 static void test_parse_string() {
+#if 1
     TEST_STRING("", "\"\"");
     TEST_STRING("Hello", "\"Hello\"");
     TEST_STRING("Hello\nWorld", "\"Hello\\nWorld\"");
     TEST_STRING("\" \\ / \b \f \n \r \t", "\"\\\" \\\\ \\/ \\b \\f \\n \\r \\t\"");
-#if 0
+#endif
     TEST_STRING("Hello\0World", "\"Hello\\u0000World\"");
     TEST_STRING("\x24", "\"\\u0024\"");         /* Dollar sign U+0024 */
     TEST_STRING("\xC2\xA2", "\"\\u00A2\"");     /* Cents sign U+00A2 */
     TEST_STRING("\xE2\x82\xAC", "\"\\u20AC\""); /* Euro sign U+20AC */
     TEST_STRING("\xF0\x9D\x84\x9E", "\"\\uD834\\uDD1E\"");  /* G clef sign U+1D11E */
     TEST_STRING("\xF0\x9D\x84\x9E", "\"\\ud834\\udd1e\"");  /* G clef sign U+1D11E */
-#endif
 }
 
 #define TEST_NUMBER(expect, json)\
@@ -189,8 +189,10 @@ static void test_parse_invalid_unicode_surrogate() {
 }
 
 void test_parse() {
+#if 1
     test_parse_literal();
     test_parse_number();
+#endif
     test_parse_string();
     test_parse_expect_value();
     test_parse_invalid_value();
@@ -199,7 +201,7 @@ void test_parse() {
     test_parse_missing_quotation_mark();
     test_parse_invalid_string_escape();
     test_parse_invalid_string_char();
-#if 0
+#if 1
     test_parse_invalid_unicode_hex();
     test_parse_invalid_unicode_surrogate();
 #endif
