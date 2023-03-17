@@ -24,37 +24,6 @@ static int __json_parse_literal(const char* str, const char** end, const char *l
     return JSON_PARSE_OK;
 }
 
-static int __json_parse_hex(const char* str, const char **end, unsigned int* u);
-
-static int __json_parse_string_length(const char* str, size_t *len) {
-    size_t ret;
-    unsigned u;
-    for (;;) {
-        if (*str == '\0')
-            return JSON_PARSE_MISS_QUOTATION_MARK;
-        if (*str == '\"')
-            break;
-        if (*(unsigned char*)str < 0x20)
-            return JSON_PARSE_INVALID_STRING_CHAR;
-        if (*str == '\\') {
-            str++;
-            if (!*str)
-                return JSON_PARSE_INVALID_STRING_ESCAPE;
-            if (*str == 'u') {
-                str++;
-                if ((ret = __json_parse_hex(str, &str, &u)) != JSON_PARSE_OK) {
-                    return ret;
-                }
-                ++*len;
-                continue;
-            }
-        }
-        str++;
-        ++*len;
-    }
-    return JSON_PARSE_OK;
-}
-
 static int __json_parse_hex(const char* str, const char **end, unsigned int* u) {
     int i;
     *u = 0;
@@ -114,6 +83,35 @@ static int __json_parse_unicode(const char* str, const char** end, char* p, size
     return JSON_PARSE_OK;
 }
 
+static int __json_parse_string_length(const char* str, size_t *len) {
+    char p[4];
+    size_t ret, utf8_len;
+    for (;;) {
+        if (*str == '\0')
+            return JSON_PARSE_MISS_QUOTATION_MARK;
+        if (*str == '\"')
+            break;
+        if (*(unsigned char*)str < 0x20)
+            return JSON_PARSE_INVALID_STRING_CHAR;
+        if (*str == '\\') {
+            str++;
+            if (!*str)
+                return JSON_PARSE_INVALID_STRING_ESCAPE;
+            if (*str == 'u') {
+                str++;
+                if ((ret = __json_parse_unicode(str, &str, p, &utf8_len)) != JSON_PARSE_OK) {
+                    return ret;
+                }
+                *len += utf8_len;
+                continue;
+            }
+        }
+        str++;
+        ++*len;
+    }
+    return JSON_PARSE_OK;
+}
+
 static int __json_parse_string_raw(const char* str, const char** end, json_value_t* v) {
     size_t ret, utf8_len;
     char* p = v->u.s.s;
@@ -150,8 +148,8 @@ static int __json_parse_string_raw(const char* str, const char** end, json_value
                     if ((ret = __json_parse_unicode(str, &str, p, &utf8_len)) != JSON_PARSE_OK) {
                         return ret;
                     }
-                    v->u.s.len += utf8_len > 2 ? 2 : (utf8_len == 2 ? 1 : 0);
                     #if 0
+                    v->u.s.len += utf8_len > 2 ? 2 : (utf8_len == 2 ? 1 : 0);
                     if (utf8_len != 1)
                         v->u.s.s = realloc(v->u.s.s, v->u.s.len + 1);
                     #endif
