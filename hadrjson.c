@@ -148,11 +148,6 @@ static int __json_parse_string_raw(const char* str, const char** end, json_value
                     if ((ret = __json_parse_unicode(str, &str, p, &utf8_len)) != JSON_PARSE_OK) {
                         return ret;
                     }
-                    #if 0
-                    v->u.s.len += utf8_len > 2 ? 2 : (utf8_len == 2 ? 1 : 0);
-                    if (utf8_len != 1)
-                        v->u.s.s = realloc(v->u.s.s, v->u.s.len + 1);
-                    #endif
                     p += utf8_len;
                     continue;
                 default:
@@ -351,4 +346,27 @@ json_value_t* json_get_array_element(const json_value_t* v, size_t index) {
     assert(v != NULL && v->type == JSON_ARRAY);
     assert(index < v->u.a.size);
     return &v->u.a.e[index];
+}
+
+size_t json_get_object_size(const json_value_t* v) {
+    assert(v != NULL && v->type == JSON_OBJECT);
+    return v->u.o.size;
+}
+
+const char* json_get_object_key(const json_value_t* v, size_t index) {
+    assert(v != NULL && v->type == JSON_OBJECT);
+    assert(index < v->u.o.size);
+    return v->u.o.m[index].k;
+}
+
+size_t json_get_object_key_length(const json_value_t* v, size_t index) {
+    assert(v != NULL && v->type == JSON_OBJECT);
+    assert(index < v->u.o.size);
+    return v->u.o.m[index].klen;
+}
+
+json_value_t* json_get_object_value(const json_value_t* v, size_t index) {
+    assert(v != NULL && v->type == JSON_OBJECT);
+    assert(index < v->u.o.size);
+    return v->u.o.m[index].v;
 }

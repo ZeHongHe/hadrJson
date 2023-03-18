@@ -24,7 +24,10 @@ enum {
     JSON_PARSE_INVALID_STRING_CHAR,
     JSON_PARSE_INVALID_UNICODE_HEX,
     JSON_PARSE_INVALID_UNICODE_SURROGATE,
-    JSON_PARSE_MISS_COMMA_OR_SQUARE_BRACKET
+    JSON_PARSE_MISS_COMMA_OR_SQUARE_BRACKET,
+    JSON_PARSE_MISS_KEY,
+    JSON_PARSE_MISS_COLON,
+    JSON_PARSE_MISS_COMMA_OR_CURLY_BRACKET
 };
 
 typedef struct json_member_t json_member_t;
@@ -59,4 +62,9 @@ size_t json_get_string_length(const json_value_t* v);
 
 size_t json_get_array_size(const json_value_t* v);
 json_value_t* json_get_array_element(const json_value_t* v, size_t index);
+
+size_t json_get_object_size(const json_value_t* v);
+const char* json_get_object_key(const json_value_t* v, size_t index);
+size_t json_get_object_key_length(const json_value_t* v, size_t index);
+json_value_t* json_get_object_value(const json_value_t* v, size_t index);
 #endif
