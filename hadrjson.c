@@ -112,13 +112,13 @@ static int __json_parse_string_length(const char* str, size_t *len) {
     return JSON_PARSE_OK;
 }
 
-static int __json_parse_string_raw(const char* str, const char** end, json_value_t* v) {
+static int __json_parse_string_raw(const char* src, const char** end, char* dst) {
     size_t ret, utf8_len;
-    char* p = v->u.s.s;
-    while (*str != '\"') {
-        if (*str == '\\') {
-            str++;
-            switch (*str) {
+    char* p = dst;
+    while (*src != '\"') {
+        if (*src == '\\') {
+            src++;
+            switch (*src) {
                 case '\"':
                     *p = '\"';
                     break;
@@ -144,8 +144,8 @@ static int __json_parse_string_raw(const char* str, const char** end, json_value
                     *p = '\t';
                     break;
                 case 'u':
-                    str++;
-                    if ((ret = __json_parse_unicode(str, &str, p, &utf8_len)) != JSON_PARSE_OK) {
+                    src++;
+                    if ((ret = __json_parse_unicode(src, &src, p, &utf8_len)) != JSON_PARSE_OK) {
                         return ret;
                     }
                     p += utf8_len;
@@ -154,29 +154,35 @@ static int __json_parse_string_raw(const char* str, const char** end, json_value
                     return JSON_PARSE_INVALID_STRING_ESCAPE;
             }
         } else
-            *p = *str;
-        str++;
+            *p = *src;
+        src++;
         p++;
     }
     *p = '\0';
-    *end = str + 1;
+    *end = src + 1;
     return JSON_PARSE_OK;
+}
+
+static int __json_parse_string_common(const char* src, const char** end, size_t* len, char** dst) {
+    int ret;
+    src++;
+    if ((ret = __json_parse_string_length(src, len)) != JSON_PARSE_OK)
+        return ret;
+    *dst = (char*)malloc((*len + 1));
+    assert(dst);
+	if ((ret = __json_parse_string_raw(src, end, *dst)) != JSON_PARSE_OK) {
+        free(*dst);
+	}
+    return ret;
 }
 
 static int __json_parse_string(const char* str, const char** end, json_value_t* v) {
     size_t len;
     int ret;
-    str++;
     len = 0;
-    if ((ret = __json_parse_string_length(str, &len)) != JSON_PARSE_OK)
+    if ((ret = __json_parse_string_common(str, end, &len, &v->u.s.s)) != JSON_PARSE_OK)
         return ret;
-    v->u.s.s = (char*)malloc((len + 1));
-    assert(v->u.s.s);
     v->u.s.len = len;
-	if ((ret = __json_parse_string_raw(str, end, v)) != JSON_PARSE_OK) {
-		free(v->u.s.s);
-		return ret;
-	}
     v->type = JSON_STRING;
     return ret;
 }
@@ -215,8 +221,9 @@ static int __json_parse_number(const char* str, const char** end, json_value_t* 
 static int __json_parse_value(const char* str, const char** end, json_value_t* v);
 
 static int __json_parse_array(const char* str, const char** end, json_value_t* v) {
+    json_value_t e, *curr;
     size_t i, size = 0;
-    int ret;
+    int ret = JSON_PARSE_OK;
     str++;
     while (is_whitespace(*str))
         str++;
@@ -225,14 +232,11 @@ static int __json_parse_array(const char* str, const char** end, json_value_t* v
         v->type = JSON_ARRAY;
         v->u.a.e = NULL;
         v->u.a.size = 0;
-        return JSON_PARSE_OK;
+        return ret;
     }
     for (;;) {
-        json_value_t* curr;
-        json_value_t e;
         json_init(&e);
         if ((ret = __json_parse_value(str, &str, &e)) != JSON_PARSE_OK) {
-            json_free(v);
             break;
         }
         size++;
@@ -250,7 +254,6 @@ static int __json_parse_array(const char* str, const char** end, json_value_t* v
             while (is_whitespace(*str))
                 str++;
             if (*str == '\0') {
-                json_free(v);
                 ret = JSON_PARSE_MISS_COMMA_OR_SQUARE_BRACKET;
                 break;
             }
@@ -268,9 +271,82 @@ static int __json_parse_array(const char* str, const char** end, json_value_t* v
         for (i = 0; i < size; i++)
             json_free(&v->u.a.e[i]);
         free(v->u.a.e);
+        v->type = JSON_NULL;
+    }
+    return ret;
+}
+
+static void __json_init_member(json_member_t* m) {
+    m->k = NULL;
+    m->klen = 0;
+    json_init(&m->v);
+}
+
+static int __json_parse_object(const char* str, const char** end, json_value_t* v) {
+    json_member_t m, *curr;
+    size_t i, size = 0;
+    int ret = JSON_PARSE_OK;
+    str++;
+    while(is_whitespace(*str))
+        str++;
+    if (*str == '}') {
+        *end = str + 1;
+        v->type = JSON_OBJECT;
+        v->u.o.size = 0;
+        v->u.o.m = NULL;
         return ret;
     }
-    return JSON_PARSE_OK;
+    for (;;) {
+        __json_init_member(&m);
+        if (*str != '\"') {
+            ret = JSON_PARSE_MISS_KEY;
+            break;
+        }
+        if ((ret = __json_parse_string_common(str, &str, &m.klen, &m.k)) != JSON_PARSE_OK)
+            break;
+        while (is_whitespace(*str))
+            str++;
+        if (*str != ':') {
+            ret = JSON_PARSE_MISS_COLON;
+            break;
+        }
+        str++;
+        while (is_whitespace(*str))
+            str++;
+        if ((ret = __json_parse_value(str, &str, &m.v)) != JSON_PARSE_OK)
+            break;
+        size++;
+        if (size == 1) {
+            v->u.o.m = (json_member_t*)malloc(sizeof(json_member_t));
+        } else {
+            v->u.o.m = (json_member_t*)realloc(v->u.o.m, size * sizeof(json_member_t));
+        }
+        curr = v->u.o.m + size - 1;
+        memcpy(curr, &m, sizeof(json_member_t));
+        while(is_whitespace(*str))
+            str++;
+        if (*str == ',') {
+            str++;
+            while(is_whitespace(*str))
+                str++;
+        } else if (*str == '}') {
+            *end = str + 1;
+            v->type = JSON_OBJECT;
+            v->u.o.size = size;
+            break;
+        } else {
+            ret = JSON_PARSE_MISS_COMMA_OR_CURLY_BRACKET;
+            break;
+        }
+    }
+    if (ret != JSON_PARSE_OK) {
+        for (i = 0; i < size; i++) {
+            free(v->u.o.m->k);
+            json_free(&v->u.o.m[i].v);
+        }
+        v->type = JSON_NULL;
+    }
+    return ret;
 }
 
 static int __json_parse_value(const char* str, const char** end, json_value_t* v) {
@@ -280,6 +356,7 @@ static int __json_parse_value(const char* str, const char** end, json_value_t* v
         case 'f':  return __json_parse_literal(str, end, "false", JSON_FALSE, v);
         case '"':  return __json_parse_string(str, end, v);
         case '[':  return __json_parse_array(str, end, v);
+        case '{':  return __json_parse_object(str, end, v);
         default:   return __json_parse_number(str, end, v);
         case '\0': return JSON_PARSE_EXPECT_VALUE;
     }
@@ -368,5 +445,5 @@ size_t json_get_object_key_length(const json_value_t* v, size_t index) {
 json_value_t* json_get_object_value(const json_value_t* v, size_t index) {
     assert(v != NULL && v->type == JSON_OBJECT);
     assert(index < v->u.o.size);
-    return v->u.o.m[index].v;
+    return &v->u.o.m[index].v;
 }

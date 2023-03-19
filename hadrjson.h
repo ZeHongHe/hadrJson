@@ -46,7 +46,7 @@ struct json_value_t {
 struct json_member_t {
     char* k;
     size_t klen;
-    json_value_t* v;
+    json_value_t v;
 };
 
 #define json_init(v) do { (v)->type = JSON_NULL; } while(0)

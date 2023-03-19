@@ -146,8 +146,8 @@ static void test_parse_array() {
 }
 
 static void test_parse_object() {
-    size_t i;
     json_value_t v;
+    size_t i;
 
     json_init(&v);
     EXPECT_EQ_INT(JSON_PARSE_OK, json_parse(&v, "{}"));
@@ -196,14 +196,16 @@ static void test_parse_object() {
     }
     
     EXPECT_EQ_STRING("o", json_get_object_key(&v, 6), json_get_object_key_length(&v, 6));
-    json_value_t* o = json_get_object_value(&v, 6);
-    EXPECT_EQ_INT(JSON_OBJECT, json_type(o));
-    for (i = 0; i < 3; i++) {
-        json_value_t* ov = json_get_object_value(o, i);
-        EXPECT_EQ_SIZE_T(1, json_get_object_key_length(o, i));
-        EXPECT_EQ_STRING("1", json_get_object_key(o, i), json_get_object_key_length(o, i));
-        EXPECT_EQ_INT(JSON_NUMBER, json_type(ov));
-        EXPECT_EQ_DOUBLE(i + 1.0, json_get_number(ov));
+    {
+        json_value_t*o = json_get_object_value(&v, 6);
+        EXPECT_EQ_INT(JSON_OBJECT, json_type(o));
+        for (i = 0; i < 3; i++) {
+            json_value_t* ov = json_get_object_value(o, i);
+            EXPECT_EQ_SIZE_T(1, json_get_object_key_length(o, i));
+            EXPECT_EQ_INT((int)('1' + i), (int)json_get_object_key(o, i)[0]); /* not strict */
+            EXPECT_EQ_INT(JSON_NUMBER, json_type(ov));
+            EXPECT_EQ_DOUBLE(i + 1.0, json_get_number(ov));
+        }
     }
     json_free(&v);
 }
@@ -238,10 +240,8 @@ static void test_parse_invalid_value() {
     TEST_ERROR(JSON_PARSE_INVALID_VALUE, "NAN");
     TEST_ERROR(JSON_PARSE_INVALID_VALUE, "nan");
 
-#if 1
     TEST_ERROR(JSON_PARSE_INVALID_VALUE, "[1,]");
     TEST_ERROR(JSON_PARSE_INVALID_VALUE, "[\"a\", nul]");
-#endif
 }
 
 static void test_parse_root_not_singular() {
@@ -332,7 +332,7 @@ void test_parse() {
     test_parse_number();
     test_parse_string();
     test_parse_array();
-#if 0
+#if 1
     test_parse_object();
 #endif
     test_parse_expect_value();
@@ -345,7 +345,7 @@ void test_parse() {
     test_parse_invalid_unicode_hex();
     test_parse_invalid_unicode_surrogate();
     test_parse_miss_comma_or_square_bracket();
-#if 0
+#if 1
     test_parse_miss_key();
     test_parse_miss_colon();
     test_parse_miss_comma_or_curly_bracket();
